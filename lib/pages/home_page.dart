@@ -19,13 +19,6 @@ class _HomePageState extends State<HomePage> {
   // List<String> history = [];
   CalculatorHistory db = CalculatorHistory();
 
-  void deleteCalculation(int reverseIndex) {
-    setState(() {
-      db.history.removeAt(reverseIndex);
-      db.updateData();
-    });
-  }
-
   final List<String> buttons = [
     'AC',
     'DEL',
@@ -80,6 +73,7 @@ class _HomePageState extends State<HomePage> {
             // Add to history with original expression and result
             db.addToHistory('$originalExpression = $result');
             // Update userInput with the result
+            db.loadData();
             userInput = result;
           }
         }
@@ -133,8 +127,7 @@ class _HomePageState extends State<HomePage> {
                   label: label,
                   onTap: () => handleTap(label),
                   db: db, // Pass the database instance instead of history list
-                  deleteFunction: (context, index) =>
-                      deleteCalculation(index), // Pass the delete function
+                  deleteFunction: null, // Pass the delete function
                 );
               },
             ),
