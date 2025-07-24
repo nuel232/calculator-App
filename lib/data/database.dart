@@ -1,10 +1,9 @@
 import 'package:hive/hive.dart';
-import 'package:calculator_app/utils/calculator.dart';
 
 class CalculatorHistory {
   final _mybox = Hive.box('calculatorHistory');
 
-  List history = [
+  List<String> history = [
     // This will store the history of calculations
   ];
   void createInitialData() {
@@ -14,7 +13,12 @@ class CalculatorHistory {
 
   // Method to load data from Hive box
   void loadData() {
-    history = _mybox.get('HISTORY') ?? [];
+    var data = _mybox.get('HISTORY');
+    if (data != null) {
+      history = List<String>.from(data);
+    } else {
+      history = [];
+    }
   }
 
   // Method to update the Hive box with the current history

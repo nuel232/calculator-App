@@ -8,22 +8,25 @@ import 'package:hive/hive.dart';
 class CalculatorButton extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
-  final _mybox = Hive.box('calculatorHistory');
-  final List<String> history;
+  final CalculatorHistory db;
+  final Function(BuildContext context, int index)? deleteFunction;
 
   // List<String> history = [];
   CalculatorButton({
-    Key? key,
+    super.key,
     required this.label,
     required this.onTap,
-    required this.history,
-  }) : super(key: key);
+    required this.db,
+    required this.deleteFunction,
+  });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
         if (label == 'calc') {
+          // Show the history in a modal bottom sheet
+          db.loadData(); // Load the history from the database
           showModalBottomSheet<void>(
             context: context,
             builder: (BuildContext context) {
@@ -40,12 +43,58 @@ class CalculatorButton extends StatelessWidget {
                     ),
                     const Divider(),
                     Expanded(
-                      child: ListView.builder(
-                        itemCount: history.length,
-                        itemBuilder: (context, index) {
-                          return ListTile(title: Text(history[index]));
-                        },
-                      ),
+                      child: db.history.isEmpty
+                          ? Center(
+                              child: Text(
+                                'No calculations yet',
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            )
+                          : ListView.builder(
+                              itemCount: db.history.length,
+                              itemBuilder: (context, index) {
+                                // Show most recent calculations first
+                                int reverseIndex =
+                                    db.history.length - 1 - index;
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    ListTile(
+                                      title: Text(
+                                        db.history[reverseIndex],
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                                      trailing: IconButton(
+                                        icon: Icon(
+                                          Icons.cancel,
+                                          color: Colors.grey[600],
+                                        ),
+                                        onPressed: () {
+                                          db.history.removeAt(reverseIndex);
+                                          db.updateData();
+                                          Navigator.pop(
+                                            context,
+                                          ); // Close bottom sheet to reflect changes
+                                        },
+                                      ),
+                                    ),
+
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 18,
+                                      ),
+                                      child: const Divider(
+                                        color: Colors.grey,
+                                        thickness: 1,
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
                     ),
                   ],
                 ),

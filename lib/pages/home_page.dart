@@ -14,9 +14,17 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   String userInput = "";
+  String previousInput = "";
   final _mybox = Hive.box('calculatorHistory');
   // List<String> history = [];
   CalculatorHistory db = CalculatorHistory();
+
+  void deleteCalculation(int reverseIndex) {
+    setState(() {
+      db.history.removeAt(reverseIndex);
+      db.updateData();
+    });
+  }
 
   final List<String> buttons = [
     'AC',
@@ -43,13 +51,14 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void initState() {
+    super.initState();
+    // Initialize the database and load history
     // TODO: implement initState
     if (_mybox.get('HISTORY') == null) {
       db.createInitialData();
     } else {
       db.loadData();
     }
-    super.initState();
   }
 
   void handleTap(String label) {
@@ -61,10 +70,19 @@ class _HomePageState extends State<HomePage> {
           userInput = userInput.substring(0, userInput.length - 1);
         }
       } else if (label == '=') {
-        userInput = calculateResult(userInput);
-        // Save the result to history
-        final result = calculateResult(userInput);
-        db.addToHistory('$userInput = $result'); // save new calculation
+        if (userInput.isNotEmpty) {
+          // Store the original expression
+          String originalExpression = userInput;
+          // Calculate the result
+          String result = calculateResult(userInput);
+
+          if (result != 'Error') {
+            // Add to history with original expression and result
+            db.addToHistory('$originalExpression = $result');
+            // Update userInput with the result
+            userInput = result;
+          }
+        }
       } else if (label == '.') {
         if (isDecimalAllowed(userInput)) {
           userInput += label;
@@ -72,7 +90,7 @@ class _HomePageState extends State<HomePage> {
       } else if (isOperator(label)) {
         if (userInput.isNotEmpty &&
             !isOperator(userInput[userInput.length - 1])) {
-          userInput += label;
+          userInput += ' $label ';
         }
       } else {
         userInput += label;
@@ -114,7 +132,9 @@ class _HomePageState extends State<HomePage> {
                 return CalculatorButton(
                   label: label,
                   onTap: () => handleTap(label),
-                  history: history,
+                  db: db, // Pass the database instance instead of history list
+                  deleteFunction: (context, index) =>
+                      deleteCalculation(index), // Pass the delete function
                 );
               },
             ),
